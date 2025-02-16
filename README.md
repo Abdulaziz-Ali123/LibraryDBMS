@@ -1,1 +1,3 @@
 # LibraryDBMS
+
+The Library Database Management System (LDBMS) is developed to increase the productivity and organization of library management. The system will manage book and digital media management, membership management, borrowing processes, and reporting. By implementing a structured and automated process, the LDBMS will improve user experience, reduce administrative tasks, and ensure accurate record-keeping, providing a more accessible and easier-to-use library system.
