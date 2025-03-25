@@ -51,6 +51,16 @@ export const updateSession = async (request: NextRequest) => {
         if (!checkAdminError && adminData) {
             isAdmin = true;
         }
+        
+        // Set admin status in cookie
+        response.cookies.set('isAdmin', isAdmin.toString(), {
+            httpOnly: false,
+            sameSite: 'lax',
+            path: '/'
+        });
+    } else {
+        // Clear admin cookie if no user
+        response.cookies.delete('isAdmin');
     }
 
     //protected routes
