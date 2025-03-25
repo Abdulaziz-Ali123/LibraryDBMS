@@ -307,7 +307,7 @@ export default function AddItems() {
                         <SelectContent>
                             <SelectItem value="regular">regular</SelectItem>
                             <SelectItem value="rare">rare</SelectItem>
-                            <SelectItem value="latest">latest</SelectItem>
+                            <SelectItem value="latest_issue">latest</SelectItem>
                             <SelectItem value="high_demand">high_demand</SelectItem>
                         </SelectContent>
                     </Select>
