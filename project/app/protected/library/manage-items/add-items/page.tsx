@@ -85,7 +85,7 @@ export default function AddItems() {
                 .select();
             
             if (firstInsertError) throw firstInsertError;
-            const itemId = firstInsertData![0].id;
+            const itemId = firstInsertData![0].item_id;
 
             try {
                 // Insert into specific table based on item type
@@ -137,7 +137,7 @@ export default function AddItems() {
             setSuccess(true);
             // Reset form fields based on type
             setTitle("");
-            setItemType("book");
+            setItemType(itemType);
             resetTypeSpecificFields();
             
         } catch (err) {

@@ -37,24 +37,37 @@ export const updateSession = async (request: NextRequest) => {
 
     // This will refresh session if expired - required for Server Components
     // https://supabase.com/docs/guides/auth/server-side/nextjs
+    // Get user data
     const user = await supabase.auth.getUser();
-
+    let isAdmin = false;
+    
+    if (user.data.user) {
+        const { data: adminData, error: checkAdminError } = await supabase
+            .from("LibraryAdmin")
+            .select("admin_id")
+            .eq('admin_id', user.data.user.id)
+            .single();
+        
+        if (!checkAdminError && adminData) {
+            isAdmin = true;
+        }
+    }
 
     //protected routes
     if (request.nextUrl.pathname.startsWith("/protected") && user.error) {
-      return NextResponse.redirect(new URL("/sign-in", request.url));
+        return NextResponse.redirect(new URL("/sign-in", request.url));
     }
 
     //admin routes
     if (request.nextUrl.pathname.startsWith("/protected/library")) {
-      // Check if user is not logged in
-      if (user.error) {
-        return NextResponse.redirect(new URL("/sign-in", request.url));
-      }
-      // Check if user is not admin
-      if (user.data.user?.user_metadata.user_role !== "admin") {
-        return NextResponse.redirect(new URL("/", request.url));
-      }
+        // Check if user is not logged in
+        if (user.error) {
+            return NextResponse.redirect(new URL("/sign-in", request.url));
+        }
+        // Check if user is not admin
+        if (!isAdmin) {
+            return NextResponse.redirect(new URL("/", request.url));
+        }
     }
     // if (request.nextUrl.pathname === "/" && !user.error) {
     //   return NextResponse.redirect(new URL("/protected", request.url));
