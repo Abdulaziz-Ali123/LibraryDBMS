@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from "react";
-import { createClient } from "@/utils/supabase/client";  // Change this line
+import { createClient } from "@/supabase/client";  // Change this line
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
