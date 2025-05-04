@@ -1,5 +1,5 @@
 'use client'
-import { createClient } from '@/utils/supabase/client'
+import { createClient } from '@/supabase/client'
 import { useEffect, useState } from 'react'
 import {
   Table,

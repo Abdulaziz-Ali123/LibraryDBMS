@@ -1,5 +1,5 @@
 'use client'
-import { createClient } from '@/utils/supabase/client'
+import { createClient } from '@/supabase/client'
 import { useEffect, useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { useRouter, useParams } from "next/navigation"
@@ -11,74 +11,104 @@ export default function ItemPage() {
   const [item, setItem] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
+  const supabase = createClient();
 
   useEffect(() => {
-    const supabase = createClient()
+    // Check authentication status - this needs to be async
+    const fetchUser = async () => {
+      const { data, error } = await supabase.auth.getUser()
+      if (data && data.user) {
+        setUser(data.user)
+      } else {
+        setNotification({
+          message: `Could not retriver user data`,
+          type: 'errr'
+        });
+        setTimeout(() => setNotification(null), 5000); // Hide after 5 seconds
+        console.log('Could not retriver user data: ', error)
+      }
+    }
     
-    // Check authentication status 
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user)
-    })
+    fetchUser()
 
     const fetchItem = async () => {
-      const supabase = createClient()
-      
-      // Try to fetch digital media
-      const { data: mediaData, error: mediaError } = await supabase
+      // Use the already created supabase client
+      const { data, error } = await supabase
         .from("Item")
-        .select(`*, DigitalMedia(*)`)  // Removed inner join
+        .select(`
+          *,
+          Books(*),
+          Magazine(*),
+          DigitalMedia(*)
+        `)
         .eq('item_id', params.id)
         .single()
 
-      if (mediaData && mediaData.DigitalMedia) {
-        console.log('Digital Media Data:', mediaData)  // Add logging
-        setItem(mediaData)
-        setLoading(false)
-        return
+      if (error) {
+        console.error('Error fetching item:', error)
+        setItem(null)
+      } else {
+        setItem(data)
       }
-
-      // Try other types if not digital media
-      const { data: magazineData, error: magazineError } = await supabase
-        .from("Item")
-        .select(`*, Magazine!inner(*)`)  // Changed to inner join
-        .eq('item_id', params.id)
-        .single()
-
-      if (magazineData) {
-        console.log('Magazine Data:', magazineData)  // Add logging
-        setItem(magazineData)
-        setLoading(false)
-        return
-      }
-
-      // If not a magazine, try other types
-      const { data: bookData } = await supabase
-        .from("Item")
-        .select(`*, Books!inner(*)`)
-        .eq('item_id', params.id)
-        .single()
-
-      const { data: digitalMediaData } = await supabase
-        .from("Item")
-        .select(`*, DigitalMedia!inner(*)`)
-        .eq('item_id', params.id)
-        .single()
-
-      setItem(bookData || mediaData)
       setLoading(false)
     }
 
     fetchItem()
   }, [params.id])
 
+  const [processing, setProcessing] = useState<'reserve' | 'checkout' | null>(null);
+
+  const [notification, setNotification] = useState<{message: string, type: 'success' | 'error'} | null>(null);
+
   const handleReserve = async () => {
-    // Implement reserve logic
-    console.log('Reserve item:', item.item_id)
+    setProcessing('reserve');
+
+    const { data, error } = await supabase.from("Reservations").insert({
+      item_id: params.id,
+      client_id: user.id,
+      status: "active"
+    });
+
+    if (!error) {
+      setNotification({
+        message: `Item "${item.title}" successfully reserved!`,
+        type: 'success'
+      });
+      setTimeout(() => setNotification(null), 5000); // Hide after 5 seconds
+    } else {
+      setNotification({
+        message: `${error.message}`,
+        type: 'error'
+      });
+      setTimeout(() => setNotification(null), 5000);
+    }
+    setProcessing(null);
   }
 
   const handleCheckout = async () => {
-    // Implement checkout logic
-    console.log('Checkout item:', item.item_id)
+    setProcessing('checkout');
+    
+    let { data, error } = await supabase
+    .rpc('borrow_item', {
+      p_client_id: user.id, 
+      p_item_id: params.id
+    })
+
+    setProcessing(null);
+    if (error) {
+      setNotification({
+        message: `${error.message}`,
+        type: 'error'
+      });
+      console.log('Error borrowing item:', error)
+      setTimeout(() => setNotification(null), 5000);
+    } else {
+      setNotification({
+        message: `Item "${item.title}" successfully checked out!`,
+        type: 'success'
+      });
+      setTimeout(() => setNotification(null), 5000);
+    }
   }
 
   if (loading) return (
@@ -95,6 +125,15 @@ export default function ItemPage() {
 
   return (
     <div className="container mx-auto py-10 max-w-3xl">
+      {notification && (
+        <div className={`mb-6 p-4 rounded-md shadow-md ${
+          notification.type === 'success' ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' : 
+          'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100'
+        }`}>
+          {notification.message}
+        </div>
+      )}
+      
       <Button 
         variant="outline" 
         onClick={() => router.back()}
@@ -180,17 +219,37 @@ export default function ItemPage() {
             <div className="flex gap-4">
               <Button 
                 onClick={handleReserve}
-                disabled={item.availability_status !== 'available'}
+                disabled={processing !== null}
                 className="w-32"
               >
-                Reserve
+                {processing === 'reserve' ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4 mr-2 inline" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                    </svg>
+                    Processing...
+                  </>
+                ) : (
+                  "Reserve"
+                )}
               </Button>
               <Button 
                 onClick={handleCheckout}
-                disabled={item.availability_status !== 'available'}
+                disabled={item.availability_status !== 'available' || processing !== null}
                 className="w-32"
               >
-                Check Out
+                {processing === 'checkout' ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4 mr-2 inline" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                    </svg>
+                    Processing...
+                  </>
+                ) : (
+                  "Check Out"
+                )}
               </Button>
             </div>
           )}
