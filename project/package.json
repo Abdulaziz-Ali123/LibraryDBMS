@@ -7,9 +7,11 @@
   },
   "dependencies": {
     "@radix-ui/react-checkbox": "^1.1.4",
+    "@radix-ui/react-dialog": "^1.1.11",
     "@radix-ui/react-dropdown-menu": "^2.1.1",
     "@radix-ui/react-label": "^2.1.0",
     "@radix-ui/react-select": "^2.1.6",
+    "@radix-ui/react-separator": "^1.1.4",
     "@radix-ui/react-slot": "^1.1.0",
     "@supabase/ssr": "latest",
     "@supabase/supabase-js": "latest",
@@ -21,7 +23,8 @@
     "next-themes": "^0.4.3",
     "prettier": "^3.3.3",
     "react": "19.0.0",
-    "react-dom": "19.0.0"
+    "react-dom": "19.0.0",
+    "supabase": "^2.22.6"
   },
   "devDependencies": {
     "@types/node": "22.10.2",
