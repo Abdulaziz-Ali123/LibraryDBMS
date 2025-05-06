@@ -3,7 +3,7 @@
 import { encodedRedirect } from "@/utils/utils";
 import { createClient } from "@/supabase/server";
 import { headers } from "next/headers";
-import { redirect } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
 
 export const signUpAction = async (formData: FormData) => {
   const email = formData.get("email")?.toString();
@@ -52,8 +52,9 @@ export const signInAction = async (formData: FormData) => {
   if (error) {
     return encodedRedirect("error", "/sign-in", error.message);
   }
-
-  return redirect("/");
+  
+  // Redirect to a special reload page that will then redirect back to home
+  return redirect("/auth/reload?redirect=/");
 };
 
 export const forgotPasswordAction = async (formData: FormData) => {
